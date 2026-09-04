@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Faturamento e Metas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0a0914;
+            --card-glass: rgba(22, 20, 36, 0.65);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --card-border-glow: rgba(192, 132, 252, 0.4);
+
+            --purple-soft: #c084fc;
+            --purple-soft-hover: #a855f7;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --success-soft: #4ade80;
+            --warning-soft: #facc15;
+            --danger-soft: #f87171;
+        }
+
+        html, body {
+            background-color: #0a0914 !important;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Fundo com efeito de luzes e textura visível */
+        body {
+            background-image:
+                    radial-gradient(rgba(255, 255, 255, 0.12) 1.5px, transparent 1.5px),
+                    radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.25) 0%, transparent 45%),
+                    radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.18) 0%, transparent 50%) !important;
+            background-size: 28px 28px, 100% 100%, 100% 100% !important;
+            background-attachment: fixed !important;
+            position: relative;
+        }
+
+        /* Elemento geométrico minimalista de fundo */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 15%;
+            right: 8%;
+            width: 320px;
+            height: 320px;
+            border: 1px solid rgba(192, 132, 252, 0.15);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 12%;
+            left: 5%;
+            width: 220px;
+            height: 220px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container, .navbar {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navbar estilo Vidro / Glassmorphism */
+        .navbar-custom {
+            background: rgba(15, 14, 26, 0.7) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border-bottom: 1px solid var(--card-border) !important;
+            padding: 1rem 0;
+        }
+
+        .brand-title {
+            color: var(--purple-soft);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        /* Cards em Glassmorphism com bordas bem marcadas */
+        .card-modern, .card-kpi, .store-card {
+            background: var(--card-glass) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border: 1px solid var(--card-border) !important;
+            border-radius: 18px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .card-kpi:hover, .store-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--card-border-glow) !important;
+            box-shadow: 0 12px 35px rgba(168, 85, 247, 0.18) !important;
+        }
+
+        .kpi-title {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .kpi-accent { color: var(--purple-soft) !important; }
+
+        .store-card {
+            padding: 1.25rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .store-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .store-title {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .metric-group {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .progress {
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 0.5rem;
+        }
+
+        /* Inputs de formulário translúcidos */
+        .form-control {
+            background: rgba(255, 255, 255, 0.06) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--card-border) !important;
+            color: var(--text-main) !important;
+            border-radius: 10px;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: var(--purple-soft) !important;
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.3) !important;
+        }
+
+        .form-control::placeholder {
+            color: #626280 !important;
+        }
+
+        .form-label {
+            color: var(--text-muted) !important;
+        }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #c084fc, #a855f7) !important;
+            border: none !important;
+            color: #0b0b0e !important;
+            font-weight: 600;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-purple:hover {
+            background: linear-gradient(135deg, #a855f7, #9333ea) !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+        }
+
+        .text-purple { color: var(--purple-soft) !important; }
+        .text-muted { color: var(--text-muted) !important; }
+        .text-white { color: var(--text-main) !important; }
+        .text-success-soft { color: var(--success-soft) !important; }
+        .text-warning-soft { color: var(--warning-soft) !important; }
+        .text-danger-soft { color: var(--danger-soft) !important; }
+
+        input[type="date"] {
+            color-scheme: dark !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-calendar-event" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>') !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            filter: none !important;
+            opacity: 1 !important;
+            cursor: pointer !important;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark navbar-custom mb-4">
+    <div class="container-fluid container">
+        <span class="navbar-brand mb-0 h5 brand-title">
+            <i class="bi bi-pie-chart-fill me-2"></i>Gestão de Faturamento & Metas
+        </span>
+    </div>
+</nav>
+
+<div class="container mb-5">
+
+    <!-- Alertas de Erro caso ocorra alguma falha -->
+    <div class="alert alert-danger mb-4" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <!-- SEÇÃO DE UPLOAD E FILTRO DE XMLs (BARRA ÚNICA) -->
+    <div class="card card-modern p-4 mb-4">
+        <h5 class="mb-3 text-white fw-semibold"><i class="bi bi-upload me-2 text-purple"></i>Importar Notas Fiscais (XML)</h5>
+        <form id="formUpload" th:action="@{/upload}" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label text-muted small">Selecione os arquivos XML (NF-e):</label>
+                <input type="file" id="inputFiles" name="files" class="form-control" multiple>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Data Início:</label>
+                <input type="date" id="inputDataInicio" name="dataInicio" class="form-control" th:value="${dataInicio}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Data Fim:</label>
+                <input type="date" id="inputDataFim" name="dataFim" class="form-control" th:value="${dataFim}">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-purple w-100" title="Processar / Filtrar">
+                    <i class="bi bi-arrow-right-short fs-4"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Indicadores Gerais -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 card-kpi">
+                <span class="kpi-title">Faturamento Total Real</span>
+                <h3 id="kpiFaturamentoTotal" class="kpi-value kpi-accent mt-2 mb-0" th:text="${'R$ ' + #numbers.formatDecimal(summary.faturamentoTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-kpi">
+                <span class="kpi-title">Qtd. Total de Notas</span>
+                <h3 id="kpiQtdNotas" class="kpi-value mt-2 mb-0" th:text="${summary.quantidadeNotas}">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-kpi">
+                <span class="kpi-title">Ticket Médio Geral</span>
+                <h3 id="kpiTicketMedio" class="kpi-value mt-2 mb-0" th:text="${'R$ ' + #numbers.formatDecimal(summary.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-kpi">
+                <span class="kpi-title">Total ICMS Geral</span>
+                <h3 id="kpiTotalIcms" class="kpi-value kpi-accent mt-2 mb-0" th:text="${'R$ ' + #numbers.formatDecimal(summary.totalIcms, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DE METAS POR LOJA -->
+    <div class="card card-modern p-4 mb-4" th:if="${summary.lojas != null and !summary.lojas.isEmpty()}">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h5 class="mb-1 text-white fw-semibold"><i class="bi bi-trophy me-2 text-purple"></i>Definição de Metas & Performance por Loja</h5>
+                <small class="text-muted">Insira as metas de Faturamento e Ticket Médio para acompanhar o progresso em tempo real.</small>
+            </div>
+            <button type="button" id="btnSalvarTodasMetas" class="btn btn-purple">
+                <i class="bi bi-check2-circle me-1"></i> Salvar Metas
+            </button>
+        </div>
+
+        <div class="row g-4" id="containerCardsMetas">
+            <div class="col-lg-4 col-md-6" th:each="loja, iter : ${summary.lojas}">
+                <div class="store-card" th:data-loja-nome="${loja.nomeLoja}">
+                    <div>
+                        <!-- Header da Loja -->
+                        <div class="store-card-header">
+                            <div>
+                                <span class="store-title" th:text="${loja.nomeLoja}">Loja</span>
+                                <div class="text-muted small" th:if="${loja.cnpj != null and !loja.cnpj.isBlank()}" th:text="${'CNPJ: ' + loja.cnpj}"></div>
+                            </div>
+                            <span class="badge bg-dark border border-secondary text-muted badge-qtd-notas" th:text="${loja.quantidadeNotas + ' notas'}"></span>
+                        </div>
+
+                        <!-- Entradas de Metas -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label text-muted small">Meta Faturamento (R$):</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm input-meta-fat"
+                                       th:data-loja="${loja.nomeLoja}"
+                                       value="0.00"
+                                       placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted small">Meta Ticket Médio (R$):</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm input-meta-ticket"
+                                       th:data-loja="${loja.nomeLoja}"
+                                       value="0.00"
+                                       placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <!-- Card Faturamento Real x Meta -->
+                        <div class="metric-group">
+                            <div class="metric-title">
+                                <span><i class="bi bi-cash-stack me-1"></i> Faturamento</span>
+                                <span class="status-fat-badge fw-bold small">--</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="text-muted">Real:</span>
+                                <span class="fw-bold text-white fat-real-val"
+                                      th:data-val="${loja.faturamentoTotal}"
+                                      th:text="${'R$ ' + #numbers.formatDecimal(loja.faturamentoTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="text-muted">Meta:</span>
+                                <span class="fw-semibold text-muted fat-meta-val">R$ 0,00</span>
+                            </div>
+                            <div class="metric-row mt-1 pt-1 border-top border-dark">
+                                <span class="fw-medium text-muted label-fat-diff">Diferença:</span>
+                                <span class="fw-bold fat-diff-val">R$ 0,00</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-purple progress-fat" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Card Ticket Médio Real x Meta -->
+                        <div class="metric-group mb-0">
+                            <div class="metric-title">
+                                <span><i class="bi bi-receipt me-1"></i> Ticket Médio</span>
+                                <span class="status-ticket-badge fw-bold small">--</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="text-muted">Real:</span>
+                                <span class="fw-bold text-white ticket-real-val"
+                                      th:data-val="${loja.ticketMedio}"
+                                      th:text="${'R$ ' + #numbers.formatDecimal(loja.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="text-muted">Meta:</span>
+                                <span class="fw-semibold text-muted ticket-meta-val">R$ 0,00</span>
+                            </div>
+                            <div class="metric-row mt-1 pt-1 border-top border-dark">
+                                <span class="fw-medium text-muted label-ticket-diff">Diferença:</span>
+                                <span class="fw-bold ticket-diff-val">R$ 0,00</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-purple progress-ticket" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const dadosLojasOriginais = /*[[${summary.lojas}]]*/ [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarMetasDoStorage();
+        calcularDesempenhos();
+
+        const inputInicio = document.getElementById('inputDataInicio');
+        const inputFim = document.getElementById('inputDataFim');
+
+        inputInicio?.addEventListener('change', aplicarFiltroDeDatas);
+        inputFim?.addEventListener('change', aplicarFiltroDeDatas);
+
+        document.querySelectorAll('.input-meta-fat, .input-meta-ticket').forEach(input => {
+            input.addEventListener('input', calcularDesempenhos);
+        });
+
+        document.getElementById('btnSalvarTodasMetas')?.addEventListener('click', () => {
+            salvarMetasNoStorage();
+            alert('Metas salvas com sucesso!');
+        });
+
+        document.getElementById('formUpload')?.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('inputFiles');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                this.action = '/filtrar';
+                this.method = 'get';
+            }
+        });
+    });
+
+    function formatarMoeda(valor) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
+    }
+
+    function aplicarFiltroDeDatas() {
+        const dataInicioVal = document.getElementById('inputDataInicio').value;
+        const dataFimVal = document.getElementById('inputDataFim').value;
+
+        const dataInicio = dataInicioVal ? new Date(dataInicioVal + 'T00:00:00') : null;
+        const dataFim = dataFimVal ? new Date(dataFimVal + 'T23:59:59') : null;
+
+        let totalFaturamentoGeral = 0;
+        let totalNotasGeral = 0;
+        let totalIcmsGeral = 0;
+
+        document.querySelectorAll('#containerCardsMetas .store-card').forEach(card => {
+            const nomeLoja = card.getAttribute('data-loja-nome');
+            const dadosLoja = dadosLojasOriginais.find(l => l.nomeLoja === nomeLoja);
+
+            if (!dadosLoja) return;
+
+            let fatLoja = 0;
+            let qtdNotasLoja = 0;
+            let icmsLoja = 0;
+
+            if (dadosLoja.notas && Array.isArray(dadosLoja.notas)) {
+                dadosLoja.notas.forEach(nota => {
+                    const dataNota = new Date(nota.dataEmissao);
+                    const dentroDoInicio = !dataInicio || dataNota >= dataInicio;
+                    const dentroDoFim = !dataFim || dataNota <= dataFim;
+
+                    if (dentroDoInicio && dentroDoFim) {
+                        fatLoja += parseFloat(nota.valorTotal || 0);
+                        icmsLoja += parseFloat(nota.valorIcms || 0);
+                        qtdNotasLoja++;
+                    }
+                });
+            } else {
+                fatLoja = parseFloat(dadosLoja.faturamentoTotal || 0);
+                icmsLoja = parseFloat(dadosLoja.totalIcms || 0);
+                qtdNotasLoja = parseInt(dadosLoja.quantidadeNotas || 0);
+            }
+
+            const ticketMedioLoja = qtdNotasLoja > 0 ? (fatLoja / qtdNotasLoja) : 0;
+
+            const fatRealEl = card.querySelector('.fat-real-val');
+            fatRealEl.setAttribute('data-val', fatLoja);
+            fatRealEl.textContent = formatarMoeda(fatLoja);
+
+            const ticketRealEl = card.querySelector('.ticket-real-val');
+            ticketRealEl.setAttribute('data-val', ticketMedioLoja);
+            ticketRealEl.textContent = formatarMoeda(ticketMedioLoja);
+
+            const badgeNotas = card.querySelector('.badge-qtd-notas');
+            if (badgeNotas) badgeNotas.textContent = qtdNotasLoja + ' notas';
+
+            totalFaturamentoGeral += fatLoja;
+            totalNotasGeral += qtdNotasLoja;
+            totalIcmsGeral += icmsLoja;
+        });
+
+        const ticketMedioGeral = totalNotasGeral > 0 ? (totalFaturamentoGeral / totalNotasGeral) : 0;
+
+        document.getElementById('kpiFaturamentoTotal').textContent = formatarMoeda(totalFaturamentoGeral);
+        document.getElementById('kpiQtdNotas').textContent = totalNotasGeral;
+        document.getElementById('kpiTicketMedio').textContent = formatarMoeda(ticketMedioGeral);
+        document.getElementById('kpiTotalIcms').textContent = formatarMoeda(totalIcmsGeral);
+
+        calcularDesempenhos();
+    }
+
+    function calcularDesempenhos() {
+        document.querySelectorAll('#containerCardsMetas .store-card').forEach(card => {
+            const inputFat = card.querySelector('.input-meta-fat');
+            const metaFat = parseFloat(inputFat.value) || 0;
+            const fatRealEl = card.querySelector('.fat-real-val');
+            const realFat = parseFloat(fatRealEl.getAttribute('data-val')) || 0;
+
+            card.querySelector('.fat-meta-val').textContent = formatarMoeda(metaFat);
+            const labelFatDiff = card.querySelector('.label-fat-diff');
+            const diffFatEl = card.querySelector('.fat-diff-val');
+            const statusFatBadge = card.querySelector('.status-fat-badge');
+            const progressFat = card.querySelector('.progress-fat');
+
+            if (metaFat > 0) {
+                const pctFat = Math.min((realFat / metaFat) * 100, 100);
+                progressFat.style.width = pctFat + '%';
+
+                if (realFat >= metaFat) {
+                    const superavit = realFat - metaFat;
+                    labelFatDiff.textContent = 'Superávit:';
+                    diffFatEl.textContent = '+ ' + formatarMoeda(superavit);
+                    diffFatEl.className = 'fw-bold fat-diff-val text-success-soft';
+                    statusFatBadge.textContent = 'BATEU A META';
+                    statusFatBadge.className = 'status-fat-badge fw-bold small text-success-soft';
+                    progressFat.className = 'progress-bar bg-success progress-fat';
+                } else {
+                    const falta = metaFat - realFat;
+                    labelFatDiff.textContent = 'Falta:';
+                    diffFatEl.textContent = '- ' + formatarMoeda(falta);
+                    diffFatEl.className = 'fw-bold fat-diff-val text-danger-soft';
+                    statusFatBadge.textContent = 'EM ANDAMENTO';
+                    statusFatBadge.className = 'status-fat-badge fw-bold small text-warning-soft';
+                    progressFat.className = 'progress-bar bg-warning progress-fat';
+                }
+            } else {
+                progressFat.style.width = '0%';
+                labelFatDiff.textContent = 'Diferença:';
+                diffFatEl.textContent = 'R$ 0,00';
+                diffFatEl.className = 'fw-bold fat-diff-val text-muted';
+                statusFatBadge.textContent = 'SEM META';
+                statusFatBadge.className = 'status-fat-badge fw-bold small text-muted';
+            }
+
+            const inputTicket = card.querySelector('.input-meta-ticket');
+            const metaTicket = parseFloat(inputTicket.value) || 0;
+            const ticketRealEl = card.querySelector('.ticket-real-val');
+            const realTicket = parseFloat(ticketRealEl.getAttribute('data-val')) || 0;
+
+            card.querySelector('.ticket-meta-val').textContent = formatarMoeda(metaTicket);
+            const labelTicketDiff = card.querySelector('.label-ticket-diff');
+            const diffTicketEl = card.querySelector('.ticket-diff-val');
+            const statusTicketBadge = card.querySelector('.status-ticket-badge');
+            const progressTicket = card.querySelector('.progress-ticket');
+
+            if (metaTicket > 0) {
+                const pctTicket = Math.min((realTicket / metaTicket) * 100, 100);
+                progressTicket.style.width = pctTicket + '%';
+
+                if (realTicket >= metaTicket) {
+                    const superavit = realTicket - metaTicket;
+                    labelTicketDiff.textContent = 'Superávit:';
+                    diffTicketEl.textContent = '+ ' + formatarMoeda(superavit);
+                    diffTicketEl.className = 'fw-bold ticket-diff-val text-success-soft';
+                    statusTicketBadge.textContent = 'BATEU A META';
+                    statusTicketBadge.className = 'status-ticket-badge fw-bold small text-success-soft';
+                    progressTicket.className = 'progress-bar bg-success progress-ticket';
+                } else {
+                    const falta = metaTicket - realTicket;
+                    labelTicketDiff.textContent = 'Falta:';
+                    diffTicketEl.textContent = '- ' + formatarMoeda(falta);
+                    diffTicketEl.className = 'fw-bold ticket-diff-val text-danger-soft';
+                    statusTicketBadge.textContent = 'EM ANDAMENTO';
+                    statusTicketBadge.className = 'status-ticket-badge fw-bold small text-warning-soft';
+                    progressTicket.className = 'progress-bar bg-warning progress-ticket';
+                }
+            } else {
+                progressTicket.style.width = '0%';
+                labelTicketDiff.textContent = 'Diferença:';
+                diffTicketEl.textContent = 'R$ 0,00';
+                diffTicketEl.className = 'fw-bold ticket-diff-val text-muted';
+                statusTicketBadge.textContent = 'SEM META';
+                statusTicketBadge.className = 'status-ticket-badge fw-bold small text-muted';
+            }
+        });
+    }
+
+    function salvarMetasNoStorage() {
+        const metas = {};
+        document.querySelectorAll('.input-meta-fat').forEach(input => {
+            const loja = input.getAttribute('data-loja');
+            if (!metas[loja]) metas[loja] = {};
+            metas[loja].metaFaturamento = parseFloat(input.value) || 0;
+        });
+        document.querySelectorAll('.input-meta-ticket').forEach(input => {
+            const loja = input.getAttribute('data-loja');
+            if (!metas[loja]) metas[loja] = {};
+            metas[loja].metaTicketMedio = parseFloat(input.value) || 0;
+        });
+        localStorage.setItem('metasLojas', JSON.stringify(metas));
+    }
+
+    function carregarMetasDoStorage() {
+        const metasSalvas = localStorage.getItem('metasLojas');
+        if (!metasSalvas) return;
+
+        try {
+            const metas = JSON.parse(metasSalvas);
+            document.querySelectorAll('.input-meta-fat').forEach(input => {
+                const loja = input.getAttribute('data-loja');
+                if (metas[loja] && metas[loja].metaFaturamento !== undefined) {
+                    input.value = metas[loja].metaFaturamento;
+                }
+            });
+            document.querySelectorAll('.input-meta-ticket').forEach(input => {
+                const loja = input.getAttribute('data-loja');
+                if (metas[loja] && metas[loja].metaTicketMedio !== undefined) {
+                    input.value = metas[loja].metaTicketMedio;
+                }
+            });
+        } catch (e) {
+            console.error('Erro ao ler metas do localStorage', e);
+        }
+    }
+    /*]]>*/
+</script>
+</body>
+</html>
